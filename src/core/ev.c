@@ -3079,7 +3079,7 @@ static JanetEVGenericMessage janet_go_thread_subr(JanetEVGenericMessage args) {
         if (!(flags & 0x2)) {
             Janet aregv = janet_unmarshal(nextbytes, endbytes - nextbytes,
                                           JANET_MARSHAL_UNSAFE, NULL, &nextbytes);
-            if (!janet_checktype(aregv, JANET_TABLE)) janet_panic("expected table for abstract registry");
+            janet_assert(janet_checktype(aregv, JANET_TABLE), "expected table for abstract registry");
             janet_vm.abstract_registry = janet_unwrap_table(aregv);
             janet_gcroot(janet_wrap_table(janet_vm.abstract_registry));
         }
@@ -3099,9 +3099,7 @@ static JanetEVGenericMessage janet_go_thread_subr(JanetEVGenericMessage args) {
             memcpy(&count1, nextbytes, sizeof(count1));
             size_t count = (size_t) count1;
             /* Use division to avoid overflowing size_t */
-            if (count > (endbytes - nextbytes - sizeof(count1)) / sizeof(JanetCFunRegistry)) {
-                janet_panic("thread message invalid");
-            }
+            janet_assert(count <= (endbytes - nextbytes - sizeof(count1)) / sizeof(JanetCFunRegistry), "thread message invalid");
             janet_vm.registry_count = count;
             janet_vm.registry_cap = count;
             janet_vm.registry = janet_malloc(count * sizeof(JanetCFunRegistry));
@@ -3120,13 +3118,11 @@ static JanetEVGenericMessage janet_go_thread_subr(JanetEVGenericMessage args) {
                                       JANET_MARSHAL_UNSAFE, NULL, &nextbytes);
         JanetFiber *fiber;
         if (!janet_checktype(fiberv, JANET_FIBER)) {
-            if (!janet_checktype(fiberv, JANET_FUNCTION)) {
-                janet_panicf("expected function or fiber, got %v", fiberv);
-            }
+            janet_assert(janet_checktype(fiberv, JANET_FUNCTION), "expected function or fiber");
             JanetFunction *func = janet_unwrap_function(fiberv);
-            if (func->def->min_arity > 1 || func->def->min_arity < 0) {
-                janet_panicf("thread function must accept 0 or 1 arguments");
-            }
+            /* TODO - normal panics here do not seem to work correctly on Wine + Mingw. This needs to be investigated, and while it appears to be related to longjmp behavior
+             * on the platform not working correctly, it is not obvious the issue is. That said, we probably should assert and hard-exit anyway if there is an issue there. */
+            janet_assert(func->def->min_arity >= 0 && func->def->min_arity <= 1, "thread function must accept 0 or 1 arguments");
             fiber = janet_fiber(func, 64, func->def->min_arity, &value);
             janet_assert(fiber != NULL, "bad fiber in thread setup");
             fiber->flags |=
@@ -3196,7 +3192,14 @@ JANET_CORE_FN(cfun_ev_thread,
     janet_sandbox_assert(JANET_SANDBOX_THREADS);
     janet_arity(argc, 1, 4);
     Janet value = argc >= 2 ? argv[1] : janet_wrap_nil();
-    if (!janet_checktype(argv[0], JANET_FUNCTION)) janet_getfiber(argv, 0);
+    if (janet_checktype(argv[0], JANET_FUNCTION)) {
+        JanetFunction *func = janet_getfunction(argv, 0);
+        if (func->def->arity < 0 || func->def->min_arity > 1) {
+            janet_panic("function must take 0 or 1 arguments");
+        }
+    } else {
+        janet_getfiber(argv, 0); /* arg check for fiber */
+    }
     uint64_t flags = 0;
     if (argc >= 3) {
         flags = janet_getflags(argv, 2, "nact");

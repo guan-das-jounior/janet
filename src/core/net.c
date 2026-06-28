@@ -192,7 +192,7 @@ void net_callback_connect(JanetFiber *fiber, JanetAsyncEvent event) {
     int res = 0;
     int size = sizeof(res);
     int r = getsockopt((SOCKET)stream->handle, SOL_SOCKET, SO_CONNECT_TIME, (char *)&res, &size);
-    if (r == NO_ERROR && res == 0xFFFFFFFF) {
+    if (r == NO_ERROR && res == (~0)) {
         return; /* This apparently indicates we haven't yet gotten a connection */
     }
     const int no_error = NO_ERROR;
