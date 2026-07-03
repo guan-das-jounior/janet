@@ -1216,16 +1216,16 @@ static void spec_nth(Builder *b, int32_t argc, const Janet *argv) {
     emit_3(r, RULE_NTH, nth, rule, tag);
 }
 
-#define GOTO_ERROR {peg_panicf(b, "expected integer between 2 and 36, got %v", argv[1]); return; }
+#define GOTO_error {peg_panicf(b, "expected integer between 2 and 36, got %v", argv[1]); return; }
 static void spec_capture_number(Builder *b, int32_t argc, const Janet *argv) {
     peg_arity(b, argc, 1, 3);
     Reserve r = reserve(b, 4);
     uint32_t base = 0;
     if (argc >= 2) {
         if (!janet_checktype(argv[1], JANET_NIL)) {
-            if (!janet_checkint(argv[1])) GOTO_ERROR;
+            if (!janet_checkint(argv[1])) GOTO_error;
             base = (uint32_t) janet_unwrap_integer(argv[1]);
-            if (base < 2 || base > 36) GOTO_ERROR;
+            if (base < 2 || base > 36) GOTO_error;
         }
     }
     uint32_t tag = (argc == 3) ? emit_tag(b, argv[2]) : 0;
@@ -1235,7 +1235,7 @@ static void spec_capture_number(Builder *b, int32_t argc, const Janet *argv) {
 error:
     peg_panicf(b, "expected integer between 2 and 36, got %v", argv[1]);
 }
-#undef GOTO_ERROR
+#undef GOTO_error
 
 static void spec_reference(Builder *b, int32_t argc, const Janet *argv) {
     peg_arity(b, argc, 1, 2);
