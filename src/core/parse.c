@@ -832,24 +832,24 @@ void janet_parser_clone(const JanetParser *src, JanetParser *dest) {
     dest->buf = NULL;
     if (dest->bufcap) {
         dest->buf = janet_malloc(dest->bufcap);
-        if (!dest->buf) goto nomem;
+        if (!dest->buf) {JANET_OUT_OF_MEMORY; return;}
         memcpy(dest->buf, src->buf, dest->bufcap);
     }
     if (dest->argcap) {
         dest->args = janet_malloc(sizeof(Janet) * dest->argcap);
-        if (!dest->args) goto nomem;
+        if (!dest->args) {JANET_OUT_OF_MEMORY; return;}
         memcpy(dest->args, src->args, dest->argcap * sizeof(Janet));
     }
     if (dest->statecap) {
         dest->states = janet_malloc(sizeof(JanetParseState) * dest->statecap);
-        if (!dest->states) goto nomem;
+        if (!dest->states) {JANET_OUT_OF_MEMORY; return;}
         memcpy(dest->states, src->states, dest->statecap * sizeof(JanetParseState));
     }
 
     return;
 
-nomem:
-    JANET_OUT_OF_MEMORY;
+// nomem:
+//     JANET_OUT_OF_MEMORY;
 }
 
 int janet_parser_has_more(JanetParser *parser) {

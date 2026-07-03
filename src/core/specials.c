@@ -1017,7 +1017,7 @@ static JanetSlot janetc_fn(JanetFopts opts, int32_t argn, const Janet *argv) {
 
     if (argn == 0) {
         errmsg = "expected at least 1 argument to function literal";
-        goto error;
+        {janetc_cerror(c, errmsg); return;}
     }
 
     /* Read function parameters */
@@ -1033,7 +1033,7 @@ static JanetSlot janetc_fn(JanetFopts opts, int32_t argn, const Janet *argv) {
     }
     if (parami >= argn || !janet_checktype(argv[parami], JANET_TUPLE)) {
         errmsg = "expected function parameters";
-        goto error;
+        {janetc_cerror(c, errmsg); return;}
     }
 
     /* Keep track of destructured parameters */
@@ -1052,7 +1052,7 @@ static JanetSlot janetc_fn(JanetFopts opts, int32_t argn, const Janet *argv) {
             arity--;
             if (!janet_checktype(param, JANET_SYMBOL)) {
                 errmsg = "only named arguments can follow &named";
-                goto error;
+                {janetc_cerror(c, errmsg); return;}
             }
             Janet key = janet_wrap_keyword(janet_unwrap_symbol(param));
             janet_table_put(named_table, key, param);
@@ -1064,7 +1064,7 @@ static JanetSlot janetc_fn(JanetFopts opts, int32_t argn, const Janet *argv) {
                 if (!janet_cstrcmp(sym, "&")) {
                     if (seenamp) {
                         errmsg = "& in unexpected location";
-                        goto error;
+                        {janetc_cerror(c, errmsg); return;}
                     } else if (i == paramcount - 1) {
                         allow_extra = 1;
                         arity--;
@@ -1073,16 +1073,16 @@ static JanetSlot janetc_fn(JanetFopts opts, int32_t argn, const Janet *argv) {
                         arity -= 2;
                     } else {
                         errmsg = "& in unexpected location";
-                        goto error;
+                        {janetc_cerror(c, errmsg); return;}
                     }
                     seenamp = 1;
                 } else if (!janet_cstrcmp(sym, "&opt")) {
                     if (seenopt) {
                         errmsg = "only one &opt allowed";
-                        goto error;
+                        {janetc_cerror(c, errmsg); return;}
                     } else if (i == paramcount - 1) {
                         errmsg = "&opt cannot be last item in parameter list";
-                        goto error;
+                        {janetc_cerror(c, errmsg); return;}
                     }
                     min_arity = i;
                     arity--;
@@ -1090,20 +1090,20 @@ static JanetSlot janetc_fn(JanetFopts opts, int32_t argn, const Janet *argv) {
                 } else if (!janet_cstrcmp(sym, "&keys")) {
                     if (seenamp) {
                         errmsg = "&keys in unexpected location";
-                        goto error;
+                        {janetc_cerror(c, errmsg); return;}
                     } else if (i == paramcount - 2) {
                         vararg = 1;
                         structarg = 1;
                         arity -= 2;
                     } else {
                         errmsg = "&keys in unexpected location";
-                        goto error;
+                        {janetc_cerror(c, errmsg); return;}
                     }
                     seenamp = 1;
                 } else if (!janet_cstrcmp(sym, "&named")) {
                     if (seenamp) {
                         errmsg = "&named in unexpected location";
-                        goto error;
+                        {janetc_cerror(c, errmsg); return;}
                     }
                     vararg = 1;
                     structarg = 1;
@@ -1179,7 +1179,7 @@ static JanetSlot janetc_fn(JanetFopts opts, int32_t argn, const Janet *argv) {
             subopts.flags = (argi == (argn - 1)) ? JANET_FOPTS_TAIL : JANET_FOPTS_DROP;
             janetc_value(subopts, argv[argi]);
             if (c->result.status == JANET_COMPILE_ERROR)
-                goto error2;
+                { janetc_popscope(c); return janetc_cslot(janet_wrap_nil()); }
         }
     }
 
@@ -1207,11 +1207,10 @@ static JanetSlot janetc_fn(JanetFopts opts, int32_t argn, const Janet *argv) {
     janetc_emit_su(c, JOP_CLOSURE, ret, defindex, 1);
     return ret;
 
-error:
-    janetc_cerror(c, errmsg);
-error2:
-    janetc_popscope(c);
-    return janetc_cslot(janet_wrap_nil());
+// error:
+//     {janetc_cerror(c, errmsg); return;}
+// error2:
+//     { janetc_popscope(c); return janetc_cslot(janet_wrap_nil()); }
 }
 
 /* Keep in lexicographic order */

@@ -21,8 +21,8 @@ if errorlevel 1 (
 )
 
 @rem Compiler and linker settings
-@set CC=gcc
-@set CFLAGS=-fpermissive -O2 -Wnoall -Wextra -Isrc/include -Isrc/conf -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
+@set CC=g++
+@set CFLAGS=-fpermissive -O2 -w -Isrc/include -Isrc/conf -D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0601
 @set LDFLAGS=-lwsock32 -lws2_32 -lmswsock -lpsapi -lshlwapi -luser32 -lkernel32 -ladvapi32
 
 @rem Enable sanitizers if requested

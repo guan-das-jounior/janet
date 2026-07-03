@@ -87,10 +87,24 @@ static void janetc_loadconst(JanetCompiler *c, Janet k, int32_t reg) {
         case JANET_NUMBER: {
             double dval = janet_unwrap_number(k);
             if (dval < INT16_MIN || dval > INT16_MAX)
-                goto do_constant;
+                {
+                int32_t cindex = janetc_const(c, k);
+                janetc_emit(c,
+                            ((uint32_t) cindex << 16) |
+                            ((uint32_t) reg << 8) |
+                            JOP_LOAD_CONSTANT);
+                break;
+            }
             int32_t i = (int32_t) dval;
             if (dval != i)
-                goto do_constant;
+                {
+                int32_t cindex = janetc_const(c, k);
+                janetc_emit(c,
+                            ((uint32_t) cindex << 16) |
+                            ((uint32_t) reg << 8) |
+                            JOP_LOAD_CONSTANT);
+                break;
+            }
             uint32_t iu = (uint32_t)i;
             janetc_emit(c,
                         ((uint32_t) iu << 16) |
