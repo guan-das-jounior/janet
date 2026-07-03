@@ -1216,6 +1216,9 @@ static JanetSlot janetc_fn(JanetFopts opts, int32_t argn, const Janet *argv) {
 //     janetc_popscope(c);
 //     return janetc_cslot(janet_wrap_nil());
 }
+#undef GOTO_error
+#undef GOTO_error2
+
 
 /* Keep in lexicographic order */
 static const JanetSpecial janetc_specials[] = {

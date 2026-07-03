@@ -466,7 +466,7 @@ static void marshal_one_abstract(MarshalState *st, Janet x, int flags) {
     }
 }
 
-#define no_registry janet_panicf("no registry value and cannot marshal %p", x);
+#define GOTO_no_registry janet_panicf("no registry value and cannot marshal %p", x);
 /* The main body of the marshaling function. Is the main
  * entry point for the mutually recursive functions. */
 static void marshal_one(MarshalState *st, Janet x, int flags) {
@@ -669,7 +669,7 @@ static void marshal_one(MarshalState *st, Janet x, int flags) {
             return;
         }
         case JANET_CFUNCTION: {
-            if (!(flags & JANET_MARSHAL_UNSAFE)) no_registry
+            if (!(flags & JANET_MARSHAL_UNSAFE)) GOTO_no_registry;
             MARK_SEEN();
             pushbyte(st, LB_UNSAFE_CFUNCTION);
             JanetCFunction cfn = janet_unwrap_cfunction(x);
@@ -677,21 +677,21 @@ static void marshal_one(MarshalState *st, Janet x, int flags) {
             return;
         }
         case JANET_POINTER: {
-            if (!(flags & JANET_MARSHAL_UNSAFE)) no_registry
+            if (!(flags & JANET_MARSHAL_UNSAFE)) GOTO_no_registry;
             MARK_SEEN();
             pushbyte(st, LB_UNSAFE_POINTER);
             pushpointer(st, janet_unwrap_pointer(x));
             return;
         }
-    // no_registry:
+    // goto no_registry:
         default: {
-            no_registry
+            GOTO_no_registry;
         }
     }
 #undef MARK_SEEN
 }
 
-#undef no_registry
+#undef GOTO_no_registry;
 
 void janet_marshal(
     JanetBuffer *buf,
