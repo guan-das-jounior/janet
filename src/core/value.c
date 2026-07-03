@@ -441,15 +441,17 @@ int janet_compare(Janet x, Janet y) {
     return status - 2;
 }
 
+#define GOTO_bad {janet_panicf("expected integer key for %s in range [0, %d), got %v", janet_type_names[type], max, key); return;}
 static int32_t getter_checkint(JanetType type, Janet key, int32_t max) {
-    if (!janet_checkint(key)) {janet_panicf("expected integer key for %s in range [0, %d), got %v", janet_type_names[type], max, key); return;}
+    if (!janet_checkint(key)) GOTO_bad;
     int32_t ret = janet_unwrap_integer(key);
-    if (ret < 0) {janet_panicf("expected integer key for %s in range [0, %d), got %v", janet_type_names[type], max, key); return;}
-    if (ret >= max) {janet_panicf("expected integer key for %s in range [0, %d), got %v", janet_type_names[type], max, key); return;}
+    if (ret < 0) GOTO_bad;
+    if (ret >= max) GOTO_bad;
     return ret;
 // bad:
 //     janet_panicf("expected integer key for %s in range [0, %d), got %v", janet_type_names[type], max, key);
 }
+#undef GOTO_bad
 
 /* Gets a value and returns. Can panic. */
 Janet janet_in(Janet ds, Janet key) {

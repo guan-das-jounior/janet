@@ -1216,24 +1216,26 @@ static void spec_nth(Builder *b, int32_t argc, const Janet *argv) {
     emit_3(r, RULE_NTH, nth, rule, tag);
 }
 
+#define GOTO_ERROR {peg_panicf(b, "expected integer between 2 and 36, got %v", argv[1]); return; }
 static void spec_capture_number(Builder *b, int32_t argc, const Janet *argv) {
     peg_arity(b, argc, 1, 3);
     Reserve r = reserve(b, 4);
     uint32_t base = 0;
     if (argc >= 2) {
         if (!janet_checktype(argv[1], JANET_NIL)) {
-            if (!janet_checkint(argv[1])) {peg_panicf(b, "expected integer between 2 and 36, got %v", argv[1]); return;}
+            if (!janet_checkint(argv[1])) GOTO_ERROR;
             base = (uint32_t) janet_unwrap_integer(argv[1]);
-            if (base < 2 || base > 36) {peg_panicf(b, "expected integer between 2 and 36, got %v", argv[1]); return;}
+            if (base < 2 || base > 36) GOTO_ERROR;
         }
     }
     uint32_t tag = (argc == 3) ? emit_tag(b, argv[2]) : 0;
     uint32_t rule = peg_compile1(b, argv[0]);
     emit_3(r, RULE_CAPTURE_NUM, rule, base, tag);
     return;
-// error:
-//     {peg_panicf(b, "expected integer between 2 and 36, got %v", argv[1]); return;}
+error:
+    peg_panicf(b, "expected integer between 2 and 36, got %v", argv[1]);
 }
+#undef GOTO_ERROR
 
 static void spec_reference(Builder *b, int32_t argc, const Janet *argv) {
     peg_arity(b, argc, 1, 2);
@@ -1632,8 +1634,8 @@ static size_t size_padded(size_t offset, size_t size) {
     return x - (x % size);
 }
 
-#define OVERFLOW_CHECK(n) do { if (i > blen - (n)) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } } while (0) /* overflow */
-
+#define GOTO_bad { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+#define OVERFLOW_CHECK(n) do { if (i > blen - (n)) { janet_free(op_flags); janet_panic("invalid peg bytecode"); } } while (0) /* overflow */
 static void *peg_unmarshal(JanetMarshalContext *ctx) {
     size_t bytecode_len = janet_unmarshal_size(ctx);
     uint32_t num_constants = (uint32_t) janet_unmarshal_int(ctx);
@@ -1714,7 +1716,7 @@ static void *peg_unmarshal(JanetMarshalContext *ctx) {
             case RULE_LOOK:
                 /* [offset, rule] */
                 OVERFLOW_CHECK(3);
-                if (rule[2] >= blen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+                if (rule[2] >= blen) GOTO_bad;
                 op_flags[rule[2]] |= 0x1;
                 i += 3;
                 break;
@@ -1726,7 +1728,7 @@ static void *peg_unmarshal(JanetMarshalContext *ctx) {
                 uint32_t len = rule[1];
                 OVERFLOW_CHECK(2 + len);
                 for (uint32_t j = 0; j < len; j++) {
-                    if (rule[2 + j] >= blen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+                    if (rule[2 + j] >= blen) GOTO_bad; 
                     op_flags[rule[2 + j]] |= 0x1;
                 }
                 i += 2 + len;
@@ -1737,8 +1739,8 @@ static void *peg_unmarshal(JanetMarshalContext *ctx) {
             case RULE_LENPREFIX:
                 /* [rule_a, rule_b (b if not a)] */
                 OVERFLOW_CHECK(3);
-                if (rule[1] >= blen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
-                if (rule[2] >= blen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+                if (rule[1] >= blen) GOTO_bad; 
+                if (rule[2] >= blen) GOTO_bad; 
                 op_flags[rule[1]] |= 0x01;
                 op_flags[rule[2]] |= 0x01;
                 i += 3;
@@ -1746,7 +1748,7 @@ static void *peg_unmarshal(JanetMarshalContext *ctx) {
             case RULE_BETWEEN:
                 /* [lo, hi, rule] */
                 OVERFLOW_CHECK(4);
-                if (rule[3] >= blen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+                if (rule[3] >= blen) GOTO_bad; 
                 op_flags[rule[3]] |= 0x01;
                 i += 4;
                 break;
@@ -1762,13 +1764,13 @@ static void *peg_unmarshal(JanetMarshalContext *ctx) {
             case RULE_CONSTANT:
                 /* [constant, tag] */
                 OVERFLOW_CHECK(3);
-                if (rule[1] >= clen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+                if (rule[1] >= clen) GOTO_bad; 
                 i += 3;
                 break;
             case RULE_CAPTURE_NUM:
                 /* [rule, base, tag] */
                 OVERFLOW_CHECK(4);
-                if (rule[1] >= blen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+                if (rule[1] >= blen) GOTO_bad; 
                 op_flags[rule[1]] |= 0x01;
                 i += 4;
                 break;
@@ -1778,7 +1780,7 @@ static void *peg_unmarshal(JanetMarshalContext *ctx) {
             case RULE_UNREF:
                 /* [rule, tag] */
                 OVERFLOW_CHECK(3);
-                if (rule[1] >= blen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+                if (rule[1] >= blen) GOTO_bad; 
                 op_flags[rule[1]] |= 0x01;
                 i += 3;
                 break;
@@ -1787,8 +1789,8 @@ static void *peg_unmarshal(JanetMarshalContext *ctx) {
             case RULE_MATCHSPLICE:
                 /* [rule, constant, tag] */
                 OVERFLOW_CHECK(4);
-                if (rule[1] >= blen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
-                if (rule[2] >= clen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+                if (rule[1] >= blen) GOTO_bad; 
+                if (rule[2] >= clen) GOTO_bad; 
                 op_flags[rule[1]] |= 0x01;
                 i += 4;
                 break;
@@ -1797,8 +1799,8 @@ static void *peg_unmarshal(JanetMarshalContext *ctx) {
             case RULE_SPLIT:
                 /* [rule, rule] */
                 OVERFLOW_CHECK(3);
-                if (rule[1] >= blen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
-                if (rule[2] >= blen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+                if (rule[1] >= blen) GOTO_bad; 
+                if (rule[2] >= blen) GOTO_bad; 
                 op_flags[rule[1]] |= 0x01;
                 op_flags[rule[2]] |= 0x01;
                 i += 3;
@@ -1811,35 +1813,35 @@ static void *peg_unmarshal(JanetMarshalContext *ctx) {
             case RULE_THRU:
                 /* [rule] */
                 OVERFLOW_CHECK(2);
-                if (rule[1] >= blen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+                if (rule[1] >= blen) GOTO_bad; 
                 op_flags[rule[1]] |= 0x01;
                 i += 2;
                 break;
             case RULE_READINT:
                 /* [ width | (endianness << 5) | (signedness << 6), tag ] */
                 OVERFLOW_CHECK(3);
-                if (rule[1] > JANET_MAX_READINT_WIDTH) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+                if (rule[1] > JANET_MAX_READINT_WIDTH) GOTO_bad; 
                 i += 3;
                 break;
             case RULE_NTH:
                 /* [nth, rule, tag] */
                 OVERFLOW_CHECK(4);
-                if (rule[2] >= blen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+                if (rule[2] >= blen) GOTO_bad; 
                 op_flags[rule[2]] |= 0x01;
                 i += 4;
                 break;
             default:
-                { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+                GOTO_bad; 
         }
     }
 
     /* last instruction cannot overflow */
-    if (i != blen) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+    if (i != blen) GOTO_bad; 
 
     /* Make sure all referenced instructions are actually
      * in instruction positions. */
     for (i = 0; i < blen; i++)
-        if (op_flags[i] == 0x01) { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+        if (op_flags[i] == 0x01) GOTO_bad; 
 
     /* Good return */
     peg->bytecode = bytecode;
@@ -1849,9 +1851,9 @@ static void *peg_unmarshal(JanetMarshalContext *ctx) {
     return peg;
 
 // bad:
-//     { janet_free(op_flags); janet_panic("invalid peg bytecode"); return; } 
+//     GOTO_bad; 
 }
-
+#undef GOTO_bad
 #undef OVERFLOW_CHECK
 
 static int cfun_peg_getter(JanetAbstract a, Janet key, Janet *out);

@@ -244,6 +244,7 @@ const char *janet_getcstring(const Janet *argv, int32_t n) {
     return janet_getcbytes(argv, n);
 }
 
+#define JANET_janet_getcbytes_badzeros_GOTO { janet_panic("bytes contain embedded 0s"); return; }
 const char *janet_getcbytes(const Janet *argv, int32_t n) {
     /* Ensure buffer 0-padded */
     if (janet_checktype(argv[n], JANET_BUFFER)) {
@@ -254,22 +255,19 @@ const char *janet_getcbytes(const Janet *argv, int32_t n) {
             char *new_string = janet_smalloc(b->count + 1);
             memcpy(new_string, b->data, b->count);
             new_string[b->count] = 0;
-            if (strlen(new_string) != (size_t) b->count) 
-                { janet_panic("bytes contain embedded 0s"); }
+            if (strlen(new_string) != (size_t) b->count) JANET_janet_getcbytes_badzeros_GOTO
             return new_string;
         } else {
             /* Ensure trailing 0 */
             janet_buffer_push_u8(b, 0);
             b->count--;
-            if (strlen((char *)b->data) != (size_t) b->count) 
-                { janet_panic("bytes contain embedded 0s"); }
+            if (strlen((char *)b->data) != (size_t) b->count) JANET_janet_getcbytes_badzeros_GOTO
             return (const char *) b->data;
         }
     }
     JanetByteView view = janet_getbytes(argv, n);
     const char *cstr = (const char *)view.bytes;
-    if (strlen(cstr) != (size_t) view.len) 
-        { janet_panic("bytes contain embedded 0s"); }
+    if (strlen(cstr) != (size_t) view.len) JANET_janet_getcbytes_badzeros_GOTO
     return cstr;
 }
 
@@ -280,12 +278,13 @@ const char *janet_optcbytes(const Janet *argv, int32_t argc, int32_t n, const ch
     return janet_getcbytes(argv, n);
 }
 
+#define JANET_janet_panicf_BAD_GOTO janet_panicf("bad slot #%d, expected non-negative 32 bit signed integer, got %v", n, x);
 int32_t janet_getnat(const Janet *argv, int32_t n) {
     Janet x = argv[n];
-    if (!janet_checkint(x) || janet_unwrap_integer(x) < 0) {
-        janet_panicf("bad slot #%d, expected non-negative 32 bit signed integer, got %v", n, x);
-    }
-    return janet_unwrap_integer(x);
+    if (!janet_checkint(x)) JANET_janet_panicf_BAD_GOTO
+    int32_t ret = janet_unwrap_integer(x);
+    if (ret < 0) JANET_janet_panicf_BAD_GOTO
+    return ret;
 }
 
 JanetAbstract janet_checkabstract(Janet x, const JanetAbstractType *at) {

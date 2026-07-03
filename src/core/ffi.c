@@ -269,8 +269,8 @@ static size_t janet_ffijit_length(void *p, size_t s) {
 const JanetAbstractType janet_type_ffijit = {
     .name = "ffi/jitfn",
     .gc = janet_ffijit_gc,
-    .length = janet_ffijit_length,    // ← length first
-    .bytes = janet_ffijit_getbytes    // ← bytes second
+    .length = janet_ffijit_length,
+    .bytes = janet_ffijit_getbytes
 };
 
 typedef struct {
