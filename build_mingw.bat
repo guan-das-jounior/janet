@@ -36,6 +36,8 @@ if not "%JANET_BUILD%" == "" (
     @set CFLAGS=%CFLAGS% -DJANET_BUILD="\"%JANET_BUILD%\""
 )
 
+@if "%1"=="fresh" goto FRESH
+
 @rem Create build directories
 if not exist build mkdir build
 if not exist build\core mkdir build\core
@@ -187,3 +189,8 @@ exit /b 1
 @echo *** Build FAILED -- Please check the error messages ***
 @echo *******************************************************
 exit /b 1
+
+
+@rem Build from strach
+:FRESH
+%CC% -o janet.exe src\core\*.c %CFLAGS% src\mainclient\shell-simple.c %LDFLAGS% -DJANET_BOOTSTRAP
