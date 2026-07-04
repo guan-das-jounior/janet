@@ -119,8 +119,7 @@ exit /b 0
 :TEST
 @echo Running tests...
 for %%f in (test\suite*.janet) do (
-    @echo Running test: %%f
-    janet.exe test\%%f
+    janet.exe %%f
     @if errorlevel 1 goto TESTFAIL
 )
 @echo All tests passed!
