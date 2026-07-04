@@ -106,10 +106,6 @@ static const uint8_t **janet_symcache_findmem(
                 return janet_vm.cache + i;
             }
         }
-// notfound:
-//     *success = 0;
-//     janet_assert(firstEmpty != NULL, "symcache failed to get memory");
-//     return firstEmpty;
 }
 
 #define janet_symcache_find(str, success) \

@@ -1849,9 +1849,6 @@ static void *peg_unmarshal(JanetMarshalContext *ctx) {
     peg->has_backref = has_backref;
     janet_free(op_flags);
     return peg;
-
-// bad:
-//     GOTO_bad; 
 }
 #undef GOTO_bad
 #undef OVERFLOW_CHECK

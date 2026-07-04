@@ -1209,12 +1209,6 @@ static JanetSlot janetc_fn(JanetFopts opts, int32_t argn, const Janet *argv) {
     ret = janetc_gettarget(opts);
     janetc_emit_su(c, JOP_CLOSURE, ret, defindex, 1);
     return ret;
-
-// error:
-//     janetc_cerror(c, errmsg);
-// error2:
-//     janetc_popscope(c);
-//     return janetc_cslot(janet_wrap_nil());
 }
 #undef GOTO_error
 #undef GOTO_error2

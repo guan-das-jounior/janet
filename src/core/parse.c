@@ -848,9 +848,6 @@ void janet_parser_clone(const JanetParser *src, JanetParser *dest) {
     }
 
     return;
-
-// nomem:
-//     JANET_OUT_OF_MEMORY;
 }
 #undef GOTO_nomem
 

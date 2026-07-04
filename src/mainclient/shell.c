@@ -496,10 +496,6 @@ static void loadhistory(void) {
 
         if (c == EOF) break;
     }
-// parsing_done:
-//     janet_parser_deinit(&p);
-//     gbl_historyi = 0;
-//     fclose(history_file);
 }
 
 static void savehistory(void) {

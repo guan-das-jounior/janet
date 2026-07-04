@@ -387,10 +387,6 @@ int janet_scan_number_base(
     *out = convert(neg, &mant, base, ex);
     janet_free(mant.digits);
     return 0;
-
-// error:
-//     janet_free(mant.digits);
-//     return 1;
 }
 #undef GOTO_error
 

@@ -448,8 +448,6 @@ static int32_t getter_checkint(JanetType type, Janet key, int32_t max) {
     if (ret < 0) GOTO_bad;
     if (ret >= max) GOTO_bad;
     return ret;
-// bad:
-//     janet_panicf("expected integer key for %s in range [0, %d), got %v", janet_type_names[type], max, key);
 }
 #undef GOTO_bad
 

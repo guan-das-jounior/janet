@@ -341,9 +341,6 @@ static int32_t doarg_1(
     if (argtype == JANET_OAT_SLOT && ret >= a->def->slotcount)
         a->def->slotcount = (int32_t) ret + 1;
     return ret;
-
-// error:
-//     { janet_asm_errorv(a, janet_formatc("error parsing instruction argument %v", x)); return 0; }
 }
 #undef GOTO_error
 
