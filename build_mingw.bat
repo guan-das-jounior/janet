@@ -55,7 +55,7 @@ for %%f in (src\boot\*.c) do (
 
 @rem Link bootstrap with required Windows libraries
 @echo Linking bootstrap...
-%CC% -o build\janet_boot.exe build\boot\*.o -lwsock32 -lws2_32 -lmswsock -lpsapi
+%CC% -o build\janet_boot.exe build\boot\*.o %LDFLAGS%
 @if errorlevel 1 goto :BUILDFAIL
 
 @rem Generate janet.c from bootstrap interpreter
@@ -73,7 +73,7 @@ build\janet_boot.exe . > build\janet.c
 
 @rem Link everything to main client
 @echo Linking janet.exe...
-%CC% -o janet.exe build\obj\janet.o build\obj\shell.o -lwsock32 -lws2_32 -lmswsock -lpsapi -lshlwapi -luser32 -lkernel32 -ladvapi32
+%CC% -o janet.exe build\obj\janet.o build\obj\shell.o %LDFLAGS%
 @if errorlevel 1 goto :BUILDFAIL
 
 @rem Build static library (libjanet.a)
